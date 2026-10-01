@@ -14,7 +14,10 @@ builder.Services.AddSingleton<GetQuoteOfTheDay>();
 var app = builder.Build();
 
 app.UseExceptionHandler();
-app.UseHttpsRedirection();
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 app.UseRequestLogging();
 
 if (app.Environment.IsDevelopment())
