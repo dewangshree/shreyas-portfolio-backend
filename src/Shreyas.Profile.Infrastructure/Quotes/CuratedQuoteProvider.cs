@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shreyas.Profile.Application.Quotes;
 using Shreyas.Profile.Domain.Quotes;
@@ -7,22 +6,20 @@ using Shreyas.Profile.Domain.Quotes;
 namespace Shreyas.Profile.Infrastructure.Quotes;
 
 public sealed class CuratedQuoteProvider(
-    IHostEnvironment environment,
     ILogger<CuratedQuoteProvider> logger) : IQuoteProvider
 {
     private static readonly IReadOnlyList<Quote> FallbackQuotes =
     [new("Success is the sum of small efforts repeated day in and day out.", "Robert Collier")];
 
-    private readonly Lazy<Task<IReadOnlyList<Quote>>> _quotes = new(() => LoadQuotesAsync(environment, logger));
+    private readonly Lazy<Task<IReadOnlyList<Quote>>> _quotes = new(() => LoadQuotesAsync(logger));
 
     public Task<IReadOnlyList<Quote>> GetQuotesAsync(CancellationToken cancellationToken = default) =>
         _quotes.Value.WaitAsync(cancellationToken);
 
     private static async Task<IReadOnlyList<Quote>> LoadQuotesAsync(
-        IHostEnvironment environment,
         ILogger logger)
     {
-        var filePath = Path.Combine(environment.ContentRootPath, "Data", "quotes.json");
+        var filePath = Path.Combine(AppContext.BaseDirectory, "Data", "quotes.json");
 
         try
         {

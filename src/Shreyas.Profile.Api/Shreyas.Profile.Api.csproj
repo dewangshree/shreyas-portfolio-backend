@@ -19,7 +19,8 @@
   <ItemGroup>
     <Content Include="../Shreyas.Profile.Infrastructure/Data/quotes.json"
              Link="Data/quotes.json"
-             CopyToOutputDirectory="PreserveNewest" />
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
