@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PATH = "/usr/local/share/dotnet:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
+        DOTNET = '/usr/local/share/dotnet/dotnet'
     }
 
     options {
@@ -17,21 +17,27 @@ pipeline {
             }
         }
 
+        stage('Verify .NET') {
+            steps {
+                sh '"$DOTNET" --version'
+            }
+        }
+
         stage('Restore') {
             steps {
-                sh 'dotnet restore'
+                sh '"$DOTNET" restore'
             }
         }
 
         stage('Build') {
             steps {
-                sh 'dotnet build --configuration Release --no-restore'
+                sh '"$DOTNET" build --configuration Release --no-restore'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'dotnet test --configuration Release --no-build'
+                sh '"$DOTNET" test --configuration Release --no-build'
             }
         }
 
@@ -40,7 +46,7 @@ pipeline {
                 sh '''
                     rm -rf publish
 
-                    dotnet publish src/Shreyas.Profile.Api/Shreyas.Profile.Api.csproj \
+                    "$DOTNET" publish src/Shreyas.Profile.Api/Shreyas.Profile.Api.csproj \
                       --configuration Release \
                       --output publish \
                       --no-build
