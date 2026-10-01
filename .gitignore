@@ -9,3 +9,4 @@ TestResults/
 appsettings.Local.json
 *.log
 shreyas-profile-web/
+publish-test/
