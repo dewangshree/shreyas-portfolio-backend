@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        PATH = "/usr/local/share/dotnet:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
+    }
+
     options {
         disableConcurrentBuilds()
         timestamps()
@@ -35,6 +39,7 @@ pipeline {
             steps {
                 sh '''
                     rm -rf publish
+
                     dotnet publish src/Shreyas.Profile.Api/Shreyas.Profile.Api.csproj \
                       --configuration Release \
                       --output publish \
