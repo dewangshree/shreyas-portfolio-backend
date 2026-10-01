@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+TestResults/
+appsettings.Local.json
+*.log
+shreyas-profile-web/
