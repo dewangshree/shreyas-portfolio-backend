@@ -58,11 +58,26 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
+                    set -e
+
+                    echo "Stopping Shreyas Portfolio API..."
+                    ssh -i ~/.ssh/shree shree@54.37.159.71 \
+                      'sudo systemctl stop shreyas-portfolio-api'
+
+                    echo "Copying new backend files..."
                     scp -i ~/.ssh/shree -r publish-linux/. \
                       shree@54.37.159.71:/var/www/shreyas-portfolio/backend/
 
+                    echo "Starting Shreyas Portfolio API..."
                     ssh -i ~/.ssh/shree shree@54.37.159.71 \
-                      'sudo systemctl restart shreyas-portfolio-api && curl --fail --silent --show-error http://127.0.0.1:5105/health'
+                      'sudo systemctl start shreyas-portfolio-api'
+
+                    echo "Waiting for API..."
+                    sleep 3
+
+                    echo "Checking health..."
+                    ssh -i ~/.ssh/shree shree@54.37.159.71 \
+                      'curl --fail --silent --show-error http://127.0.0.1:5105/health'
                 '''
             }
         }
@@ -76,11 +91,11 @@ pipeline {
 
     post {
         success {
-            echo 'Backend CI completed successfully.'
+            echo 'Backend CI/CD completed successfully.'
         }
 
         failure {
-            echo 'Backend CI failed.'
+            echo 'Backend CI/CD failed.'
         }
     }
 }
