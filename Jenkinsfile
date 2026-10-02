@@ -44,19 +44,32 @@ pipeline {
         stage('Publish') {
             steps {
                 sh '''
-                    rm -rf publish
+                    rm -rf publish-linux
 
                     "$DOTNET" publish src/Shreyas.Profile.Api/Shreyas.Profile.Api.csproj \
                       --configuration Release \
-                      --output publish \
-                      --no-build
+                      --runtime linux-x64 \
+                      --self-contained true \
+                      --output publish-linux
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    scp -i ~/.ssh/shree -r publish-linux/. \
+                      shree@54.37.159.71:/var/www/shreyas-portfolio/backend/
+
+                    ssh -i ~/.ssh/shree shree@54.37.159.71 \
+                      'sudo systemctl restart shreyas-portfolio-api && curl --fail --silent --show-error http://127.0.0.1:5105/health'
                 '''
             }
         }
 
         stage('Archive') {
             steps {
-                archiveArtifacts artifacts: 'publish/**', fingerprint: true
+                archiveArtifacts artifacts: 'publish-linux/**', fingerprint: true
             }
         }
     }
