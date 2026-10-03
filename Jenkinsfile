@@ -29,6 +29,22 @@ pipeline {
             }
         }
 
+        stage('Sonar Begin') {
+            steps {
+                script {
+                    def scannerHome = tool 'SonarScanner for .NET'
+
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            "\$DOTNET" "${scannerHome}/SonarScanner.MSBuild.dll" begin \
+                              /k:"dewangshree_shreyas-portfolio-backend_c5739113-917d-4ff1-90e1-afe846b95866" \
+                              /d:sonar.token="\$SONAR_AUTH_TOKEN"
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 sh '"$DOTNET" build --configuration Release --no-restore'
@@ -38,6 +54,29 @@ pipeline {
         stage('Test') {
             steps {
                 sh '"$DOTNET" test --configuration Release --no-build'
+            }
+        }
+
+        stage('Sonar End') {
+            steps {
+                script {
+                    def scannerHome = tool 'SonarScanner for .NET'
+
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            "\$DOTNET" "${scannerHome}/SonarScanner.MSBuild.dll" end \
+                              /d:sonar.token="\$SONAR_AUTH_TOKEN"
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
 
