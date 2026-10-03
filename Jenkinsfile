@@ -115,8 +115,10 @@ pipeline {
                     ssh -i ~/.ssh/shree shree@54.37.159.71 \
                       'sudo systemctl stop shreyas-portfolio-api'
 
-                    echo "Copying new backend files..."
-                    scp -i ~/.ssh/shree -r publish-linux/. \
+                    echo "Syncing new backend files..."
+                    rsync -az \
+                      -e "ssh -i ~/.ssh/shree" \
+                      publish-linux/ \
                       shree@54.37.159.71:/var/www/shreyas-portfolio/backend/
 
                     echo "Starting Shreyas Portfolio API..."
