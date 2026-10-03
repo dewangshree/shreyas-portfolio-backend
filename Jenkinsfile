@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOTNET = '/usr/local/share/dotnet/dotnet'
+        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
     }
 
     options {
@@ -77,6 +78,17 @@ pipeline {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh '''
+                    /usr/local/bin/docker build \
+                      -t shreyas-portfolio-backend:${BUILD_NUMBER} \
+                      -t shreyas-portfolio-backend:latest \
+                      .
+                '''
             }
         }
 
