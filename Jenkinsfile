@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOTNET = '/usr/local/share/dotnet/dotnet'
-        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
+        PATH = "/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
     }
 
     options {
@@ -84,7 +84,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 sh '''
-                    /usr/local/bin/docker build \
+                    docker build \
                       -t shreyas-portfolio-backend:${BUILD_NUMBER} \
                       -t shreyas-portfolio-backend:latest \
                       .
@@ -92,59 +92,51 @@ pipeline {
             }
         }
 
-        stage('Publish') {
-            steps {
-                sh '''
-                    rm -rf publish-linux
-
-                    "$DOTNET" publish src/Shreyas.Profile.Api/Shreyas.Profile.Api.csproj \
-                      --configuration Release \
-                      --runtime linux-x64 \
-                      --self-contained true \
-                      --output publish-linux
-                '''
-            }
-        }
-
-        stage('Deploy') {
+        stage('Docker Deploy') {
             steps {
                 sh '''
                     set -e
 
-                    echo "Stopping Shreyas Portfolio API..."
+                    echo "Sending backend Docker image to server..."
+
+                    docker save shreyas-portfolio-backend:${BUILD_NUMBER} | gzip | \
                     ssh -i ~/.ssh/shree shree@54.37.159.71 \
-                      'sudo systemctl stop shreyas-portfolio-api'
+                      'gunzip | sudo docker load'
 
-                    echo "Syncing new backend files..."
-                    rsync -az \
-                      -e "ssh -i ~/.ssh/shree" \
-                      publish-linux/ \
-                      shree@54.37.159.71:/var/www/shreyas-portfolio/backend/
+                    echo "Replacing backend container..."
 
-                    echo "Starting Shreyas Portfolio API..."
-                    ssh -i ~/.ssh/shree shree@54.37.159.71 \
-                      'sudo systemctl start shreyas-portfolio-api'
+                    ssh -i ~/.ssh/shree shree@54.37.159.71 "
+                        sudo docker rm -f shreyas-portfolio-backend 2>/dev/null || true
 
-                    echo "Waiting for API..."
+                        sudo docker run -d \
+                          --name shreyas-portfolio-backend \
+                          --restart unless-stopped \
+                          -p 127.0.0.1:5106:10000 \
+                          shreyas-portfolio-backend:${BUILD_NUMBER}
+                    "
+
+                    echo "Waiting for backend container..."
                     sleep 3
 
-                    echo "Checking health..."
-                    ssh -i ~/.ssh/shree shree@54.37.159.71 \
-                      'curl --fail --silent --show-error http://127.0.0.1:5105/health'
-                '''
-            }
-        }
+                    echo "Checking backend health..."
 
-        stage('Archive') {
-            steps {
-                archiveArtifacts artifacts: 'publish-linux/**', fingerprint: true
+                    ssh -i ~/.ssh/shree shree@54.37.159.71 \
+                      'curl --fail --silent --show-error http://127.0.0.1:5106/health'
+
+                    echo "Checking public API..."
+
+                    curl --fail --silent --show-error \
+                      https://shreyasportfolio.hopto.org/api/quotes/today > /dev/null
+
+                    echo "Backend Docker deployment successful."
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'Backend CI/CD completed successfully.'
+            echo 'Backend CI/CD + SonarQube + Docker deployment completed successfully.'
         }
 
         failure {
