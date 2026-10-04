@@ -39,7 +39,9 @@ pipeline {
                         sh """
                             "\$DOTNET" "${scannerHome}/SonarScanner.MSBuild.dll" begin \
                               /k:"dewangshree_shreyas-portfolio-backend_c5739113-917d-4ff1-90e1-afe846b95866" \
-                              /d:sonar.token="\$SONAR_AUTH_TOKEN"
+                              /d:sonar.token="\$SONAR_AUTH_TOKEN" \
+                              /d:sonar.scanner.scanAll=false \
+                              /d:sonar.exclusions="**/bin/**,**/obj/**,**/publish/**,**/publish-linux/**"
                         """
                     }
                 }
