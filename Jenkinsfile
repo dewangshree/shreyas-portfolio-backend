@@ -84,10 +84,13 @@ pipeline {
         stage('Docker Build') {
             steps {
                 sh '''
-                    docker build \
+                    docker build --load \
                       -t shreyas-portfolio-backend:${BUILD_NUMBER} \
                       -t shreyas-portfolio-backend:latest \
                       .
+
+                    docker image inspect \
+                      shreyas-portfolio-backend:${BUILD_NUMBER} > /dev/null
                 '''
             }
         }
