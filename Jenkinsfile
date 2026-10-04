@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOTNET = '/usr/local/share/dotnet/dotnet'
-        PATH = "/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
+        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
     }
 
     options {
@@ -81,34 +81,38 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
-            steps {
-                sh '''
-                    docker build --load \
-                      -t shreyas-portfolio-backend:${BUILD_NUMBER} \
-                      -t shreyas-portfolio-backend:latest \
-                      .
-
-                    docker image inspect \
-                      shreyas-portfolio-backend:${BUILD_NUMBER} > /dev/null
-                '''
-            }
-        }
-
-        stage('Docker Deploy') {
+        stage('Docker Build & Deploy') {
             steps {
                 sh '''
                     set -e
 
-                    echo "Sending backend Docker image to server..."
+                    echo "Syncing backend source code to server..."
 
-                    docker save shreyas-portfolio-backend:${BUILD_NUMBER} | gzip | \
-                    ssh -i ~/.ssh/shree shree@54.37.159.71 \
-                      'gunzip | sudo docker load'
+                    rsync -az --delete \
+                      --exclude '.git' \
+                      --exclude 'bin' \
+                      --exclude 'obj' \
+                      --exclude 'publish' \
+                      --exclude 'publish-linux' \
+                      --exclude '.scannerwork' \
+                      -e "ssh -i ~/.ssh/shree" \
+                      ./ \
+                      shree@54.37.159.71:/home/shree/shreyas-portfolio-backend-build/
 
-                    echo "Replacing backend container..."
+                    echo "Building Docker image on server..."
 
                     ssh -i ~/.ssh/shree shree@54.37.159.71 "
+                        set -e
+
+                        cd /home/shree/shreyas-portfolio-backend-build
+
+                        sudo docker build \
+                          -t shreyas-portfolio-backend:${BUILD_NUMBER} \
+                          -t shreyas-portfolio-backend:latest \
+                          .
+
+                        echo 'Replacing backend container...'
+
                         sudo docker rm -f shreyas-portfolio-backend 2>/dev/null || true
 
                         sudo docker run -d \
@@ -131,7 +135,7 @@ pipeline {
                     curl --fail --silent --show-error \
                       https://shreyasportfolio.hopto.org/api/quotes/today > /dev/null
 
-                    echo "Backend Docker deployment successful."
+                    echo "Backend Docker build and deployment successful."
                 '''
             }
         }
@@ -139,7 +143,7 @@ pipeline {
 
     post {
         success {
-            echo 'Backend CI/CD + SonarQube + Docker deployment completed successfully.'
+            echo 'Backend CI/CD + SonarQube + server-side Docker deployment completed successfully.'
         }
 
         failure {
