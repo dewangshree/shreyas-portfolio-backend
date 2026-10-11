@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
+using Shreyas.Profile.Application.Quotes;
 using Shreyas.Profile.Infrastructure.Quotes;
 
 namespace Shreyas.Profile.Tests;
@@ -38,7 +39,7 @@ public sealed class ProfileApiIntegrationTests : IClassFixture<WebApplicationFac
 
         quote.GetProperty("text").GetString().Should().NotBeNullOrWhiteSpace();
         quote.GetProperty("author").GetString().Should().NotBeNullOrWhiteSpace();
-        quote.GetProperty("date").GetDateTime().Should().NotBe(default);
+        DateOnly.Parse(quote.GetProperty("date").GetString()!).Should().Be(IndianStandardTime.Today());
         quote.GetProperty("source").GetString().Should().Be("curated");
     }
 

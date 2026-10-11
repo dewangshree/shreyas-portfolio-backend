@@ -18,20 +18,10 @@ pipeline {
             }
         }
 
-        stage('Verify .NET') {
+        stage('Verify') {
             steps {
                 sh '"$DOTNET" --version'
-            }
-        }
-
-        stage('Restore') {
-            steps {
                 sh '"$DOTNET" restore'
-            }
-        }
-
-        stage('Sonar Begin') {
-            steps {
                 script {
                     def scannerHome = tool 'SonarScanner for .NET'
 
@@ -45,23 +35,8 @@ pipeline {
                         """
                     }
                 }
-            }
-        }
-
-        stage('Build') {
-            steps {
                 sh '"$DOTNET" build --configuration Release --no-restore'
-            }
-        }
-
-        stage('Test') {
-            steps {
                 sh '"$DOTNET" test --configuration Release --no-build'
-            }
-        }
-
-        stage('Sonar End') {
-            steps {
                 script {
                     def scannerHome = tool 'SonarScanner for .NET'
 
@@ -72,18 +47,13 @@ pipeline {
                         """
                     }
                 }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
 
-        stage('Docker Build & Deploy') {
+        stage('Deploy') {
             steps {
                 sh '''
                     set -e
@@ -124,20 +94,28 @@ pipeline {
                           shreyas-portfolio-backend:${BUILD_NUMBER}
                     "
 
+                    echo "Backend Docker deployment successful."
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                    set -e
+
                     echo "Waiting for backend container..."
                     sleep 3
 
                     echo "Checking backend health..."
-
                     ssh -i ~/.ssh/shree shree@54.37.159.71 \
                       'curl --fail --silent --show-error http://127.0.0.1:5106/health'
 
                     echo "Checking public API..."
-
                     curl --fail --silent --show-error \
                       https://shreyasportfolio.hopto.org/api/quotes/today > /dev/null
 
-                    echo "Backend Docker build and deployment successful."
+                    echo "Backend health checks successful."
                 '''
             }
         }

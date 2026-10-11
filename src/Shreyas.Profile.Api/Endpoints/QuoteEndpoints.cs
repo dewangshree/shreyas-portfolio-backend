@@ -10,13 +10,13 @@ public static class QuoteEndpoints
             GetQuoteOfTheDay getQuoteOfTheDay,
             CancellationToken cancellationToken) =>
         {
-            var result = await getQuoteOfTheDay.ExecuteAsync(DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
+            var result = await getQuoteOfTheDay.ExecuteAsync(IndianStandardTime.Today(), cancellationToken);
 
             return TypedResults.Ok(new QuoteResponse(result.Text, result.Author, result.Date, result.Source));
         })
         .WithName("GetQuoteOfTheDay")
-        .WithSummary("Gets the curated quote for the current UTC date")
-        .WithDescription("Returns a deterministic curated quote selected from the current UTC date.")
+        .WithSummary("Gets the curated quote for the current Indian Standard Time date")
+        .WithDescription("Returns a deterministic curated quote selected from the current Indian Standard Time date.")
         .Produces<QuoteResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status500InternalServerError)
         .AllowAnonymous();

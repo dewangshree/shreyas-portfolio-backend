@@ -79,6 +79,16 @@ public sealed class GetQuoteOfTheDayTests
         first.Text.Should().NotBe(second.Text);
     }
 
+    [Theory]
+    [InlineData("2026-10-10T18:29:59+00:00", 2026, 10, 10)]
+    [InlineData("2026-10-10T18:30:00+00:00", 2026, 10, 11)]
+    public void India_date_changes_at_midnight_ist(string utcTime, int year, int month, int day)
+    {
+        var date = IndianStandardTime.FromUtc(DateTimeOffset.Parse(utcTime));
+
+        date.Should().Be(new DateOnly(year, month, day));
+    }
+
     private sealed class TestQuoteProvider(IReadOnlyList<Quote> quotes) : IQuoteProvider
     {
         public Task<IReadOnlyList<Quote>> GetQuotesAsync(CancellationToken cancellationToken = default) =>
